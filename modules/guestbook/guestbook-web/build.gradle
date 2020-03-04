@@ -9,4 +9,3 @@ dependencies {
 	compileOnly project(":modules:guestbook:guestbook-api")
 	compileOnly project(":modules:guestbook:guestbook-service")
 }
-
