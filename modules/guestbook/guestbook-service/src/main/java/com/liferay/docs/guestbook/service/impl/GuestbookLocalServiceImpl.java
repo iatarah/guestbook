@@ -18,12 +18,16 @@ import java.util.Date;
 import java.util.List;
 
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 
 import com.liferay.docs.guestbook.exception.GuestbookNameException;
 import com.liferay.docs.guestbook.model.Guestbook;
+import com.liferay.docs.guestbook.model.GuestbookEntry;
+import com.liferay.docs.guestbook.service.GuestbookEntryLocalService;
 import com.liferay.docs.guestbook.service.base.GuestbookLocalServiceBaseImpl;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.OrderByComparator;
@@ -33,29 +37,33 @@ import com.liferay.portal.kernel.util.Validator;
  * The implementation of the guestbook local service.
  *
  * <p>
- * All custom service methods should be put in this class. Whenever methods are added, rerun ServiceBuilder to copy their definitions into the <code>com.liferay.docs.guestbook.service.GuestbookLocalService</code> interface.
+ * All custom service methods should be put in this class. Whenever methods are
+ * added, rerun ServiceBuilder to copy their definitions into the
+ * <code>com.liferay.docs.guestbook.service.GuestbookLocalService</code>
+ * interface.
  *
  * <p>
- * This is a local service. Methods of this service will not have security checks based on the propagated JAAS credentials because this service can only be accessed from within the same VM.
+ * This is a local service. Methods of this service will not have security
+ * checks based on the propagated JAAS credentials because this service can only
+ * be accessed from within the same VM.
  * </p>
  *
  * @author Ivan
  * @see GuestbookLocalServiceBaseImpl
  */
-@Component(
-	property = "model.class.name=com.liferay.docs.guestbook.model.Guestbook",
-	service = AopService.class
-)
+@Component(property = "model.class.name=com.liferay.docs.guestbook.model.Guestbook", service = AopService.class)
 public class GuestbookLocalServiceImpl extends GuestbookLocalServiceBaseImpl {
 
 	/*
 	 * NOTE FOR DEVELOPERS:
 	 *
-	 * Never reference this class directly. Use <code>com.liferay.docs.guestbook.service.GuestbookLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.docs.guestbook.service.GuestbookLocalServiceUtil</code>.
+	 * Never reference this class directly. Use
+	 * <code>com.liferay.docs.guestbook.service.GuestbookLocalService</code> via
+	 * injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use
+	 * <code>com.liferay.docs.guestbook.service.GuestbookLocalServiceUtil</code>.
 	 */
-	
-	public Guestbook addGuestbook(long userId, String name,
-			ServiceContext serviceContext) throws PortalException {
+
+	public Guestbook addGuestbook(long userId, String name, ServiceContext serviceContext) throws PortalException {
 
 		long groupId = serviceContext.getScopeGroupId();
 
@@ -83,14 +91,13 @@ public class GuestbookLocalServiceImpl extends GuestbookLocalServiceBaseImpl {
 
 		return guestbook;
 	}
-	
+
 	public List<Guestbook> getGuestbooks(long groupId) {
 
 		return guestbookPersistence.findByGroupId(groupId);
 	}
 
-	public List<Guestbook> getGuestbooks(long groupId, int start, int end,
-			OrderByComparator<Guestbook> obc) {
+	public List<Guestbook> getGuestbooks(long groupId, int start, int end, OrderByComparator<Guestbook> obc) {
 
 		return guestbookPersistence.findByGroupId(groupId, start, end, obc);
 	}
@@ -111,5 +118,46 @@ public class GuestbookLocalServiceImpl extends GuestbookLocalServiceBaseImpl {
 		}
 	}
 
+	public Guestbook updateGuestbook(long userId, long guestbookId, String name, ServiceContext serviceContext)
+			throws PortalException, SystemException {
+
+		Date now = new Date();
+
+		validate(name);
+
+		Guestbook guestbook = getGuestbook(guestbookId);
+
+		User user = userLocalService.getUser(userId);
+
+		guestbook.setUserId(userId);
+		guestbook.setUserName(user.getFullName());
+		guestbook.setModifiedDate(serviceContext.getModifiedDate(now));
+		guestbook.setName(name);
+		guestbook.setExpandoBridgeAttributes(serviceContext);
+
+		guestbookPersistence.update(guestbook);
+
+		return guestbook;
+	}
+
+	public Guestbook deleteGuestbook(long guestbookId, ServiceContext serviceContext)
+			throws PortalException, SystemException {
+
+		Guestbook guestbook = getGuestbook(guestbookId);
+
+		List<GuestbookEntry> entries = _guestbookEntryLocalService.getGuestbookEntries(serviceContext.getScopeGroupId(),
+				guestbookId);
+
+		for (GuestbookEntry entry : entries) {
+			_guestbookEntryLocalService.deleteGuestbookEntry(entry.getEntryId());
+		}
+
+		guestbook = deleteGuestbook(guestbook);
+
+		return guestbook;
+	}
+
+	@Reference
+	private GuestbookEntryLocalService _guestbookEntryLocalService;
 
 }
