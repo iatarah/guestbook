@@ -28,6 +28,8 @@ import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.model.User;
+import com.liferay.portal.kernel.search.Indexable;
+import com.liferay.portal.kernel.search.IndexableType;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.OrderByComparator;
 import com.liferay.portal.kernel.util.Validator;
@@ -58,6 +60,7 @@ public class GuestbookEntryLocalServiceImpl
 	 * Never reference this class directly. Use <code>com.liferay.docs.guestbook.service.GuestbookEntryLocalService</code> via injection or a <code>org.osgi.util.tracker.ServiceTracker</code> or use <code>com.liferay.docs.guestbook.service.GuestbookEntryLocalServiceUtil</code>.
 	 */
 	
+	@Indexable(type = IndexableType.REINDEX)
 	public GuestbookEntry addGuestbookEntry(long userId, long guestbookId, String name,
 			String email, String message, ServiceContext serviceContext)
 		throws PortalException {
@@ -94,6 +97,7 @@ public class GuestbookEntryLocalServiceImpl
 		return entry;
 	}
 	
+	@Indexable(type = IndexableType.REINDEX)
 	public GuestbookEntry updateGuestbookEntry(long userId, long guestbookId,
 			long entryId, String name, String email, String message,
 			ServiceContext serviceContext)
@@ -123,6 +127,7 @@ public class GuestbookEntryLocalServiceImpl
 		return entry;
 	}
 
+	@Indexable(type = IndexableType.DELETE)
 	public GuestbookEntry deleteGuestbookEntry(GuestbookEntry entry)
 			throws PortalException {
 
@@ -130,7 +135,8 @@ public class GuestbookEntryLocalServiceImpl
 
 			return entry;
 		}
-
+	
+	@Indexable(type = IndexableType.DELETE)
 		public GuestbookEntry deleteGuestbookEntry(long entryId) throws PortalException {
 
 			GuestbookEntry entry =
